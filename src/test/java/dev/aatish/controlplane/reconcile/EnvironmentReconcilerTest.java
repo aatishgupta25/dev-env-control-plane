@@ -1,6 +1,7 @@
 package dev.aatish.controlplane.reconcile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -40,5 +41,17 @@ class EnvironmentReconcilerTest {
 
         verify(provisioner).ensureAbsent(environment);
         verify(repository).delete(environment);
+    }
+
+    @Test
+    void provisioningFailureMarksOnlyThatEnvironmentAsError() {
+        Environment environment = new Environment("env-1", "compiler", "ubuntu:24.04");
+        when(repository.findByStatus(EnvironmentStatus.PENDING)).thenReturn(List.of(environment));
+        when(repository.findByStatus(EnvironmentStatus.DELETING)).thenReturn(List.of());
+        doThrow(new RuntimeException("cluster unavailable")).when(provisioner).ensurePresent(environment);
+
+        reconciler.reconcile();
+
+        assertEquals(EnvironmentStatus.ERROR, environment.getStatus());
     }
 }
