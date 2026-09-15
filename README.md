@@ -1,26 +1,39 @@
 # Dev Environment Control Plane
 
-A small learning project for understanding control-plane patterns: desired state, reconciliation, idempotent infrastructure operations, and cleanup.
+A control plane for provisioning isolated Kubernetes development environments from reusable workspace templates.
 
-The API stores requested development environments in PostgreSQL. A background reconciler compares that desired state with Kubernetes and creates or removes an isolated namespace for each environment.
+The API stores requested development environments in PostgreSQL. A background reconciler continuously moves Kubernetes resources toward that desired state, creating and removing an isolated namespace for each environment.
 
-## Why this shape?
+## Architecture
 
-The project intentionally separates three concerns:
+The service separates three concerns:
 
-- **API and persistence** record what should exist.
-- **Reconciliation** repeatedly moves actual state toward desired state.
-- **Provisioning** owns Kubernetes-specific side effects behind a small interface.
+- **API and persistence** record the desired environment state.
+- **Reconciliation** moves actual cluster state toward the persisted desired state.
+- **Provisioning** owns Kubernetes-specific side effects behind an interface.
 
-That separation keeps the control-plane logic testable without needing a Kubernetes cluster. Provisioning uses apply/delete operations so repeated reconciliation is safe rather than treating every retry as a new request.
+This separation keeps control-plane behavior independently testable and isolates Kubernetes operations from the API layer. Provisioning uses idempotent apply/delete operations so reconciliation can safely retry operations.
 
-An environment moves through a deliberately small lifecycle:
+An environment moves through the lifecycle:
 
 `PENDING -> READY -> DELETING`
 
-Provisioning failures move it to `ERROR` instead of blocking reconciliation of unrelated environments.
+Provisioning failures move the environment to `ERROR` without blocking reconciliation of unrelated environments.
 
-## MVP API
+## Workspace templates
+
+Environment requests select a reusable workspace template. The template registry provides Java 21, Python 3.12, and Ubuntu workspaces and resolves each template to its corresponding container image before the desired state is persisted.
+
+Example request:
+
+```json
+{
+  "name": "compiler-project",
+  "template": "java"
+}
+```
+
+## API
 
 ```text
 POST   /environments
@@ -28,17 +41,6 @@ GET    /environments
 GET    /environments/{id}
 DELETE /environments/{id}
 ```
-
-Example request:
-
-```json
-{
-  "name": "compiler-project",
-  "template": "ubuntu:24.04"
-}
-```
-
-The `template` is simply the container image used for the workspace deployment. Keeping templates this small avoids building a separate template system before it is useful.
 
 ## Run locally
 
@@ -49,12 +51,8 @@ docker compose up -d
 mvn spring-boot:run
 ```
 
-Run the unit tests with:
+Run the tests with:
 
 ```bash
 mvn test
 ```
-
-## Scope
-
-This is intentionally not a production developer platform. Authentication, quotas, secrets, networking policy, multi-cluster scheduling, persistent volumes, and a UI are left out so the project stays focused on the control-plane mechanics themselves.
