@@ -15,6 +15,10 @@ public class EnvironmentService {
 
     @Transactional
     public Environment create(CreateEnvironmentRequest request) {
+        if (request == null || blank(request.name()) || blank(request.template())) {
+            throw new IllegalArgumentException("name and template are required");
+        }
+
         Environment environment = new Environment(
                 UUID.randomUUID().toString(),
                 request.name(),
@@ -35,5 +39,9 @@ public class EnvironmentService {
     public void delete(String id) {
         Environment environment = get(id);
         environment.setStatus(EnvironmentStatus.DELETING);
+    }
+
+    private boolean blank(String value) {
+        return value == null || value.isBlank();
     }
 }
