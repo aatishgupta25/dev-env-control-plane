@@ -12,13 +12,14 @@ import org.junit.jupiter.api.Test;
 
 class EnvironmentServiceTest {
     private final EnvironmentRepository repository = mock(EnvironmentRepository.class);
-    private final EnvironmentService service = new EnvironmentService(repository);
+    private final WorkspaceTemplates templates = new WorkspaceTemplates();
+    private final EnvironmentService service = new EnvironmentService(repository, templates);
 
     @Test
     void createStartsPending() {
         when(repository.save(any(Environment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Environment environment = service.create(new CreateEnvironmentRequest("compiler", "ubuntu:24.04"));
+        Environment environment = service.create(new CreateEnvironmentRequest("compiler", "ubuntu"));
 
         assertEquals("compiler", environment.getName());
         assertEquals("ubuntu:24.04", environment.getTemplate());
@@ -29,6 +30,12 @@ class EnvironmentServiceTest {
     void createRejectsMissingFields() {
         assertThrows(IllegalArgumentException.class,
                 () -> service.create(new CreateEnvironmentRequest("compiler", " ")));
+    }
+
+    @Test
+    void createRejectsUnknownTemplate() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.create(new CreateEnvironmentRequest("compiler", "unknown")));
     }
 
     @Test
