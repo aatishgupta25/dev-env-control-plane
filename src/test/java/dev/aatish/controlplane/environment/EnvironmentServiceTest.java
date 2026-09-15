@@ -1,6 +1,7 @@
 package dev.aatish.controlplane.environment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -22,6 +23,12 @@ class EnvironmentServiceTest {
         assertEquals("compiler", environment.getName());
         assertEquals("ubuntu:24.04", environment.getTemplate());
         assertEquals(EnvironmentStatus.PENDING, environment.getStatus());
+    }
+
+    @Test
+    void createRejectsMissingFields() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.create(new CreateEnvironmentRequest("compiler", " ")));
     }
 
     @Test
