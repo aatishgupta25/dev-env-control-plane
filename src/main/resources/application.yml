@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/controlplane}
+    username: ${DATABASE_USER:controlplane}
+    password: ${DATABASE_PASSWORD:controlplane}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+control-plane:
+  reconcile-ms: 5000
