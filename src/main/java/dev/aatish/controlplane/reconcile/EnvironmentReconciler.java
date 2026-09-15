@@ -28,15 +28,23 @@ public class EnvironmentReconciler {
 
     private void reconcilePending(List<Environment> environments) {
         for (Environment environment : environments) {
-            provisioner.ensurePresent(environment);
-            environment.setStatus(EnvironmentStatus.READY);
+            try {
+                provisioner.ensurePresent(environment);
+                environment.setStatus(EnvironmentStatus.READY);
+            } catch (RuntimeException exception) {
+                environment.setStatus(EnvironmentStatus.ERROR);
+            }
         }
     }
 
     private void reconcileDeleting(List<Environment> environments) {
         for (Environment environment : environments) {
-            provisioner.ensureAbsent(environment);
-            repository.delete(environment);
+            try {
+                provisioner.ensureAbsent(environment);
+                repository.delete(environment);
+            } catch (RuntimeException exception) {
+                environment.setStatus(EnvironmentStatus.ERROR);
+            }
         }
     }
 }
