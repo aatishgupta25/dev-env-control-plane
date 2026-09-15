@@ -8,9 +8,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class EnvironmentService {
     private final EnvironmentRepository repository;
+    private final WorkspaceTemplates templates;
 
-    public EnvironmentService(EnvironmentRepository repository) {
+    public EnvironmentService(EnvironmentRepository repository, WorkspaceTemplates templates) {
         this.repository = repository;
+        this.templates = templates;
     }
 
     @Transactional
@@ -22,7 +24,7 @@ public class EnvironmentService {
         Environment environment = new Environment(
                 UUID.randomUUID().toString(),
                 request.name(),
-                request.template());
+                templates.resolve(request.template()));
         return repository.save(environment);
     }
 
