@@ -20,6 +20,8 @@ An environment moves through the lifecycle:
 
 Provisioning failures move the environment to `ERROR` without blocking reconciliation of unrelated environments.
 
+Provisioned namespaces, deployments, and workspace pods carry control-plane ownership labels, including the environment ID, so cluster resources can be traced back to their persisted environment.
+
 ## Workspace templates
 
 Environment requests select a reusable workspace template. The template registry provides Java 21, Python 3.12, and Ubuntu workspaces and resolves each template to its corresponding container image before the desired state is persisted.
